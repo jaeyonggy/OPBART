@@ -8,7 +8,7 @@ This is the implementation of OPBART and OPSMBART from the paper
 
 The implementation is heavily based on the R package “SoftBart” by Linero(2018) as we used their BART implementation as a basis for our model.
 
-OPBART is a very capable alternative to ordered probit regression for ordinal data. OPSMBART is a semiparametric version of OPBART which has an added interpretability. We also implemented Bayesian ordered probit regression from Albert(1993) to compare as a baseline model.
+OPBART is a very capable alternative to ordered probit regression for ordinal data. OPSMBART is a semiparametric version of OPBART which has an added interpretability. We also implemented Bayesian ordered probit regression from Albert(1993) to compare as a baseline model. The implementations are available in the R folder.
 
 For detailed example, check out demonstration.Rmd in the Demo folder or the link below.
 
