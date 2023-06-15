@@ -13,3 +13,17 @@ OPBART is a very capable alternative to ordered probit regression for ordinal da
 For detailed example, check out demonstration.Rmd in the Demo folder or the link below.
 
 [Demonstration](https://rawcdn.githack.com/jaeyonggy/OPBART/main/Demo/demonstration.nb.html)
+
+
+## Warning
+
+The calculation of marginal effects for dummy variables by OPSMBART is not implemented yet.
+
+## Future work
+
+- Implement marginal effects for dummy variables by OPSMBART.
+- Optimize the codes in general.
+
+
+
+
