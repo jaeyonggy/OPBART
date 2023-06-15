@@ -1,1 +1,1 @@
-# Ordered probit Bayesian additive regression trees (OPBART)
+# Ordered probit (semiparametric) Bayesian additive regression trees (OPBART, OPSMBART)
