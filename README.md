@@ -1,6 +1,6 @@
 # Ordered probit (semiparametric) Bayesian additive regression trees
 
-## OPBART, OPSMBART
+## OPBART and OPSMBART
 
 This is the implementation of OPBART and OPSMBART from the paper: OPBART (2023).
 
