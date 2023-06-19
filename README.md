@@ -15,11 +15,11 @@ For a detailed example, check out demonstration.Rmd in the Demo folder or the li
 
 ## Warning
 
-The calculation of marginal effects for dummy variables by OPSMBART is not implemented yet.
+The calculation of marginal effects for dummy variables by semi-OPBART is not implemented yet.
 
 ## Future work
 
-- Implement marginal effects for dummy variables by OPSMBART.
+- Implement marginal effects for dummy variables by semi-OPBART.
 - Optimize the codes in general.
 
 ## Reference
