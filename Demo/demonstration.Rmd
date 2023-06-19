@@ -1,0 +1,238 @@
+---
+title: "Demonstration"
+output:
+  html_notebook:
+    toc: yes
+---
+
+```{r}
+library(SoftBart)  # For SoftBart
+library(progress)
+library(truncnorm)  ##
+library(MASS)  # for polr(): a function for ordered probit regression
+library(caret)  # for createDataPartition()
+library(mvtnorm)  # for multivariate normal dstn
+library(tictoc)  # to time
+library(coda)  # for HPDinterval(), mcmc()
+library(ordinalForest)  # for ordfor(): ordinal forest
+```
+
+\
+\
+
+## Simulation data generation
+
+\
+
+\begin{equation}
+f(x) = -7 + 10\mathrm{sin}(\pi x_1 x_2) + 20(x_3 - 0.5)^{2} + 10x_4 + 5x_5
+\end{equation}
+
+```{r}
+## Functions to generate simulation data
+
+fx = function(x) -7 + 10 * sin(pi * x[,1] * x[,2]) + 20 * (x[,3] - 0.5)^2 + 10 * x[,4] + 5 * x[,5]
+
+gen_data = function(n, us) {
+  X = matrix(runif(n*5), nrow = n)
+  mu = fx(X)
+  Z = rnorm(n, mean = mu, sd = 1)
+  Y = ifelse(-Inf < Z & Z <= us[1], 1, ifelse(-us[1] < Z & Z <= us[2], 2, ifelse(-us[2] < Z & Z <= us[3], 3, ifelse(-us[3] < Z & Z <= us[4], 4, 5))))
+  Y = factor(Y, ordered=TRUE)
+  return(data.frame(X, mu, Z, Y))
+}
+```
+
+```{r}
+set.seed(7)
+
+n = 2000
+us = c(0, 4, 8, 13)  # (us0 = -Inf), us1 = 0, us2 = 4, us3 = 8, us4 = 13, (us5 = Inf)
+
+DATA = gen_data(n, us)
+DATA
+```
+
+```{r}
+table(DATA$Y)
+```
+
+```{r}
+set.seed(7)
+# Perform train-test split while maintaining proportion of y
+train_idx = createDataPartition(DATA$Y, p = 0.7, list = FALSE)
+
+# Create the train and test sets
+train_data = DATA[train_idx, ]
+test_data = DATA[-train_idx, ]
+
+# Dataframe that will be used for training and testing (the observed values will be X and Y only)
+train_df = train_data[,c("X1","X2","X3","X4","X5","Y")]
+test_df = test_data[,c("X1","X2","X3","X4","X5","Y")]
+```
+
+\
+\
+
+## OPBART
+
+```{r, results='hide'}
+set.seed(7)
+opts = Opts(num_burn = 15000, num_save = 5000)
+fitted_opbart = opbart(Y ~ ., train_df, test_df, opts = opts)
+```
+
+```{r}
+cat(sprintf(" us2: %.4f\n", mean(fitted_opbart$us_p[1:opts$num_save,2])), 
+    sprintf("us3: %.4f\n", mean(fitted_opbart$us_p[1:opts$num_save,3])), 
+    sprintf("us4: %.4f\n", mean(fitted_opbart$us_p[1:opts$num_save,4])))
+```
+
+```{r}
+hpd_opbart = HPDinterval(mcmc(fitted_opbart$us_p[,2:4]))
+rownames(hpd_opbart) = c("us2", "us3", "us4")
+hpd_opbart
+```
+
+```{r}
+confusionMatrix(fitted_opbart$test_preds, test_df$Y)
+```
+
+\
+\
+
+## semi-OPBART
+
+```{r, results='hide'}
+set.seed(7)
+fitted_smopbart = smopbart(Y ~ . - X4 - X5, ~ X4 + X5, train_df, test_df, one_unit = 0.01, opts = opts)
+```
+
+```{r}
+cat(sprintf(" us2: %.4f\n", mean(fitted_smopbart$us_p[1:opts$num_save,2])), 
+    sprintf("us3: %.4f\n", mean(fitted_smopbart$us_p[1:opts$num_save,3])), 
+    sprintf("us4: %.4f\n", mean(fitted_smopbart$us_p[1:opts$num_save,4])))
+```
+
+```{r}
+hpd_smopbart = HPDinterval(mcmc(fitted_smopbart$us_p[,2:4]))
+rownames(hpd_smopbart) = c("us2", "us3", "us4")
+hpd_smopbart
+```
+
+```{r}
+# The regression coefficients for X4 and X5
+cat(sprintf(" theta1: %.4f\n", mean(fitted_smopbart$theta_p[1:opts$num_save,1])), 
+    sprintf("theta2: %.4f\n", mean(fitted_smopbart$theta_p[1:opts$num_save,2])))
+```
+
+```{r}
+hpd_theta_smopbart = HPDinterval(mcmc(fitted_smopbart$theta_p))
+rownames(hpd_theta_smopbart) = c("theta1", "theta2")
+hpd_theta_smopbart
+```
+
+```{r}
+confusionMatrix(fitted_smopbart$test_preds, test_df$Y)
+```
+
+```{r}
+# Marginal effects of X4
+ME_X4 = matrix(round(colMeans(fitted_smopbart$ME_train_list[[1]]), 4), ncol = 5)
+colnames(ME_X4) = c("ME1", "ME2", "ME3", "ME4", "ME5")
+ME_X4
+```
+
+```{r}
+hpd_ME_X4 = round(HPDinterval(mcmc(fitted_smopbart$ME_train_list[[1]])), 4)
+rownames(hpd_ME_X4) = c("ME1", "ME2", "ME3", "ME4", "ME5")
+hpd_ME_X4
+```
+
+```{r}
+# Marginal effects of X5
+ME_X5 = matrix(round(colMeans(fitted_smopbart$ME_train_list[[2]]), 4), ncol = 5)
+colnames(ME_X5) = c("ME1", "ME2", "ME3", "ME4", "ME5")
+ME_X5
+```
+
+```{r}
+hpd_ME_X5 = round(HPDinterval(mcmc(fitted_smopbart$ME_train_list[[2]])), 4)
+rownames(hpd_ME_X5) = c("ME1", "ME2", "ME3", "ME4", "ME5")
+hpd_ME_X5
+```
+
+\
+\
+
+## Bayesian ordered probit regression
+
+```{r, results='hide'}
+set.seed(7)
+fitted_bopr = bopr(Y ~ ., train_df, test_df, N = (opts$num_burn + opts$num_save), burn.in = opts$num_burn)
+```
+
+```{r}
+cat(sprintf(" us2: %.4f\n", mean(fitted_bopr$us_p[1:opts$num_save,2])), 
+    sprintf("us3: %.4f\n", mean(fitted_bopr$us_p[1:opts$num_save,3])), 
+    sprintf("us4: %.4f\n", mean(fitted_bopr$us_p[1:opts$num_save,4])))
+```
+
+```{r}
+hpd_bopr = HPDinterval(mcmc(fitted_bopr$us_p[,2:4]))
+rownames(hpd_bopr) = c("us2", "us3", "us4")
+hpd_bopr
+```
+
+```{r}
+# The regression coefficients for X4 and X5
+cat(sprintf(" theta1: %.4f\n", mean(fitted_bopr$theta_p[1:opts$num_save,5])), 
+    sprintf("theta2: %.4f\n", mean(fitted_bopr$theta_p[1:opts$num_save,6])))
+```
+
+```{r}
+hpd_theta_bopr = HPDinterval(mcmc(fitted_bopr$theta_p[,5:6]))
+rownames(hpd_theta_bopr) = c("theta1", "theta2")
+hpd_theta_bopr
+```
+
+```{r}
+confusionMatrix(fitted_bopr$test_preds, test_df$Y)
+```
+
+\
+\
+
+## Ordered probit regression
+
+```{r}
+set.seed(7)
+fitted_opr = polr(Y ~ ., data = train_df, method="probit")
+opr_preds = predict(fitted_opr, newdata = test_df)
+summary(fitted_opr)
+```
+
+```{r}
+confusionMatrix(opr_preds, test_df$Y)
+```
+
+\
+\
+
+## Ordinal random forest
+
+```{r}
+set.seed(7)
+fitted_orf = ordfor(depvar = "Y", data = train_df)
+orf_pred = predict(fitted_orf, test_df)
+```
+
+```{r}
+confusionMatrix(orf_pred$ypred, test_df$Y)
+```
+
+
+
+
+
+
