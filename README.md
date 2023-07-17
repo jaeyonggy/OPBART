@@ -1,5 +1,6 @@
 # Ordered probit Bayesian additive regression trees
 
+
 ## OPBART and semi-OPBART
 
 This is the implementation of OPBART and semi-OPBART from the paper: OPBART (2023).
@@ -12,9 +13,6 @@ For a detailed example, check out demonstration.Rmd in the Demo folder or the li
 
 [Demonstration](https://rawcdn.githack.com/jaeyonggy/OPBART/main/Demo/demonstration.nb.html)
 
-## Future work
-
-- Optimize the codes in general.
 
 ## Reference
 
