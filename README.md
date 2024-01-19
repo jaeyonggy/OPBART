@@ -3,7 +3,9 @@
 
 ## OPBART and semi-OPBART
 
-This is the implementation of OPBART and semi-OPBART from the paper: OPBART (2023).
+This is the implementation of OPBART and semi-OPBART from the paper: 
+
+**Lee, J., & Hwang, B. S. (2024). Ordered probit Bayesian additive regression trees for ordinal data. Stat, 13(1), e643. https://doi.org/10.1002/sta4.643**
 
 Our work is heavily based on the R package 'SoftBart' by Linero and Yang (2018) as we used their BART implementation as a basis for our models.
 
